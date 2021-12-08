@@ -1,14 +1,11 @@
 from typing import Any, Dict, Union, List, ClassVar, Tuple, Generic, Callable, Optional
 import sys
 from typing_extensions import Literal, Final
-
-import xxhash
 from io import BytesIO as StringIO
 import dill
 import pickle
 import contextlib
-
-
+import xxhash
 
 class _CloudPickleTypeHintFix:
     """
@@ -32,7 +29,7 @@ class _CloudPickleTypeHintFix:
         # The distorted type check sematic for typing construct becomes:
         # ``type(obj) is type(TypeHint)``, which means "obj is a
         # parametrized TypeHint"
-        if type(obj) is type(Literal):  # pragma: no branch
+        if type(obj) is type(Literal):  # pragma: no branch 文字类型
             initargs = (Literal, obj.__values__)
         elif type(obj) is type(Final):  # pragma: no branch
             initargs = (Final, obj.__type__)
@@ -60,21 +57,21 @@ def temporary_assignment(obj, attr, value):
     finally:
         setattr(obj, attr, original)
 
-@contextlib.contextmanager
-def _no_cache_fields(obj):
-    try:
-        if (
-            "PreTrainedTokenizerBase" in [base_class.__name__ for base_class in type(obj).__mro__]
-            and hasattr(obj, "cache")
-            and isinstance(obj.cache, dict)
-        ):
-            with temporary_assignment(obj, "cache", {}):
-                yield
-        else:
-            yield
-
-    except ImportError:
-        yield
+# @contextlib.contextmanager
+# def _no_cache_fields(obj):
+#     try:
+#         if (
+#             "PreTrainedTokenizerBase" in [base_class.__name__ for base_class in type(obj).__mro__]
+#             and hasattr(obj, "cache")
+#             and isinstance(obj.cache, dict)
+#         ):
+#             with temporary_assignment(obj, "cache", {}):
+#                 yield
+#         else:
+#             yield
+#
+#     except ImportError:
+#         yield
 
 class Pickler(dill.Pickler):
     """Same Pickler as the one from dill, but improved for notebooks and shells"""
@@ -97,8 +94,7 @@ class Pickler(dill.Pickler):
 def dumps(obj):
     """pickle an object to a string"""
     file = StringIO()
-    with _no_cache_fields(obj):
-        dump(obj, file)
+    dump(obj, file)
     return file.getvalue()
 
 def dump(obj, file):
@@ -149,5 +145,15 @@ def detect_fn(fn: Optional[Callable] = None, fn_kwargs: Optional[dict] = None):
     try:
         hasher.update(fn)
     except:
-        pass
+        print(f"fn：{fn} can not be hashed.")
+        return None
+    for key in sorted(fn_kwargs):
+        hasher.update(key)
+        try:
+            hasher.update(fn_kwargs[key])
+        except:
+            print(
+                f"Parameter '{key}'={fn_kwargs[key]} of the fn {fn} couldn't be hashed properly."
+                )
+            return None
     return hasher.hexdigest()

@@ -39,7 +39,7 @@ class ImdbModel(nn.Module):
         return logit
 
 def trainer(opt, loss_fn, train_dl, val_dl, epoch, model, metric, device):
-
+    model = model.to(device)
     for ep in range(epoch):
         total_loss, total_acc, num = 0, 0, 0
         for batch in tqdm(train_dl, desc='train epoch'):
@@ -99,7 +99,7 @@ def run():
     val_dl = DataLoader(imdb_val, batch_size=16, collate_fn=data_collator)
     test_dl = DataLoader(imdb_test, batch_size=16, collate_fn=data_collator)
 
-    model = ImdbModel().to(device)
+    model = ImdbModel()
 
     opt = torch.optim.AdamW(model.parameters(), lr=0.01)
     loss = nn.CrossEntropyLoss()
